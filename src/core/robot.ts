@@ -1,39 +1,66 @@
 import { IRobot, RobotDirection, RobotPosition, RobotRotation } from "../models"
-import { CONSTANTS } from "../crosscutting/constants"
+
 export class Robot implements IRobot {
 	Dimension: { width: number; length: number }
 	private _currentPosition: RobotPosition
 
-	public Robot() {
+	constructor(defaultWith: number, defaultLength: number) {
 		this.Dimension = {
-			width: CONSTANTS.BOARDDIMENSIONS.WIDTH,
-			length: CONSTANTS.BOARDDIMENSIONS.LENGTH,
+			width: defaultWith, // x axis
+			length: defaultLength, // y axis
 		}
-		// Default facing north
-		this.reset()
 	}
 
+	//Assumption Place always reset gives people a fresh start
 	place(initialPosition: RobotPosition): void {
-		this._currentPosition = initialPosition
+		// TODO create specific error messages, making error tracing easier
+		if (!this.Dimension) {
+			throw Error("No Robot initialized")
+		}
+
+		if (!initialPosition.direction) {
+			throw Error("no direction supplied")
+		}
+		if (!Number.isInteger(initialPosition.coordinate.x) || !Number.isInteger(initialPosition.coordinate.y)) {
+			throw Error("initial position's coordinates have to be integers")
+		}
+
+		if (initialPosition.coordinate.x < 0 || initialPosition.coordinate.x >= this.Dimension.width) {
+			throw Error(`initial position x need to be within [0,${this.Dimension.width})`)
+		}
+
+		if (initialPosition.coordinate.y < 0 || initialPosition.coordinate.y >= this.Dimension.length) {
+			throw Error(`initial position y coordinate need to be within [0,${this.Dimension.length})`)
+		}
+		this._currentPosition = {
+			coordinate: {
+				x: initialPosition.coordinate.x,
+				y: initialPosition.coordinate.y,
+			},
+			direction: initialPosition.direction,
+		}
 	}
 
 	move(): RobotPosition {
-		// TODO Prevent failing
+		// Any movement that would result in the robot falling from the table must be prevented,
+		// however further valid movement commands must still be allowed.
+
+		// Movement beyond the boundary will not make robot move, robot still stays the same position
 		switch (this._currentPosition.direction) {
 			case RobotDirection.EAST: {
-				this._currentPosition.coordinate.x++
+				if (this._currentPosition.coordinate.x < this.Dimension.width - 1) this._currentPosition.coordinate.x++
 				break
 			}
 			case RobotDirection.NORTH: {
-				this._currentPosition.coordinate.y++
+				if (this._currentPosition.coordinate.y < this.Dimension.length - 1) this._currentPosition.coordinate.y++
 				break
 			}
 			case RobotDirection.WEST: {
-				this._currentPosition.coordinate.x--
+				if (this._currentPosition.coordinate.x > 0) this._currentPosition.coordinate.x--
 				break
 			}
 			case RobotDirection.SOUTH: {
-				this._currentPosition.coordinate.y++
+				if (this._currentPosition.coordinate.y > 0) this._currentPosition.coordinate.y--
 				break
 			}
 		}
@@ -42,6 +69,7 @@ export class Robot implements IRobot {
 	}
 
 	reset(): void {
+		// Default facing north
 		this._currentPosition = {
 			coordinate: {
 				x: 0,
@@ -62,6 +90,10 @@ export class Robot implements IRobot {
 				break
 			}
 		}
+		return this._currentPosition
+	}
+
+	getCurrentPosition(): RobotPosition {
 		return this._currentPosition
 	}
 
@@ -93,19 +125,19 @@ export class Robot implements IRobot {
 	private _rotateRight(): void {
 		switch (this._currentPosition.direction) {
 			case RobotDirection.EAST: {
-				this._currentPosition.direction = RobotDirection.NORTH
-				break
-			}
-			case RobotDirection.NORTH: {
-				this._currentPosition.direction = RobotDirection.WEST
-				break
-			}
-			case RobotDirection.WEST: {
 				this._currentPosition.direction = RobotDirection.SOUTH
 				break
 			}
-			case RobotDirection.SOUTH: {
+			case RobotDirection.NORTH: {
 				this._currentPosition.direction = RobotDirection.EAST
+				break
+			}
+			case RobotDirection.WEST: {
+				this._currentPosition.direction = RobotDirection.NORTH
+				break
+			}
+			case RobotDirection.SOUTH: {
+				this._currentPosition.direction = RobotDirection.WEST
 				break
 			}
 		}

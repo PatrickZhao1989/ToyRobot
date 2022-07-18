@@ -1,12 +1,15 @@
 import chalk from "chalk"
 import inquirer from "inquirer"
-import { Command } from "./src/models"
+import { Robot } from "./src/core/robot"
+import { Command, RobotDirection, RobotPosition, RobotRotation } from "./src/models"
+import { CONSTANTS } from "./src/crosscutting/index"
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const inquirerPrompt = require("inquirer-prompt-suggest")
 
 inquirer.registerPrompt("suggest", inquirerPrompt)
 
 console.log("Hello world")
+const robot = new Robot(CONSTANTS.BOARDDIMENSIONS.WIDTH, CONSTANTS.BOARDDIMENSIONS.LENGTH)
 const initialQuestion = [
 	{
 		type: "suggest",
@@ -17,7 +20,19 @@ const initialQuestion = [
 			if (input.split(" ")[0] !== "PLACE" || input.split(" ").length !== 2) {
 				return "Please enter a valid command. The first command should be PLACE command. e.g. PLACE 0,0,NORTH"
 			}
-			// table.addRobot(robot).at(input.split(" ")[1])
+			const placeCommand = input.split(" ")
+			const placeElements = placeCommand[1].split(",")
+
+			const initialPosition: RobotPosition = {
+				coordinate: {
+					x: parseInt(placeElements[0]),
+					y: parseInt(placeElements[1]),
+				},
+				direction: RobotDirection[placeElements[2] as keyof typeof RobotDirection],
+			}
+
+			robot.place(initialPosition)
+			console.log(chalk.blueBright(robot.report()))
 			return true
 		},
 	},
@@ -40,23 +55,22 @@ const subsequentQuestions = [
 				switch (userCommand) {
 					case Command.PLACE:
 						// table.place(table.getRobot()).at(input.split(" ")[1])
-						console.log(chalk.redBright(`Place ${input.split(" ")}`))
+						// console.log(chalk.redBright(`Place ${input.split(" ")}`))
 						break
 					case Command.MOVE:
-						//table.getRobot().move()
-						console.log(chalk.redBright(`MOVE`))
+						robot.move()
+						console.log(chalk.blueBright(robot.report()))
 						break
 					case Command.LEFT:
-						// table.getRobot().rotate(RobotRotation.LEFT)
-						console.log(chalk.redBright(`LEFT`))
+						robot.rotate(RobotRotation.LEFT)
+						console.log(chalk.blueBright(robot.report()))
 						break
 					case Command.RIGHT:
-						// table.getRobot().rotate(RobotRotation.RIGHT)
-						console.log(chalk.redBright(`RIGHT`))
+						robot.rotate(RobotRotation.RIGHT)
+						console.log(chalk.blueBright(robot.report()))
 						break
 					case Command.REPORT:
-						//Logger.success(`Current position: ${table.getRobot().report()}`)
-						console.log(chalk.redBright(`REPORT`))
+						console.log(chalk.blueBright(robot.report()))
 						break
 				}
 			} catch (error: any) {
@@ -90,6 +104,6 @@ const subsequentPrompts = () => {
 
 console.log(chalk.cyanBright("Toy Robot Simulator"))
 
-console.log(chalk.blue("Example of valid commannds that you could enter:\nPLACE 2,3,W\nLEFT\nRIGHT\nMOVE\nREPORT\n"))
+console.log(chalk.blue("Example of valid commands that you could enter:\nPLACE 2,3,NORTH\nLEFT\nRIGHT\nMOVE\nREPORT\n"))
 
 initialPrompt()
